@@ -1,0 +1,53 @@
+const GP = require('./Graph');
+var async = require('async');
+const { executionAsyncResource } = require('async_hooks');
+const { promises } = require('fs');
+
+
+
+var filePath = './dataSample.json';
+//filePath = './dataSample2.json';
+let Graph = new GP(filePath);
+let nodesArray = Graph.MakeFunctions(filePath)
+//const treeify = require('treeify');
+Graph.PrintTree(filePath);
+// add the vertecies
+
+//console.log("finding starting nodes");
+const arr =Graph.FindStart();
+
+
+function Executor(array) {
+  //console.log( '  array   :      ' + JSON.stringify(array[0]) )
+    let subArray = new Array();
+    for (let i = 0; i < array.length; i++) {
+        console.log(`${Graph.FindTaskname(array[i])} is now executing for ${Graph.FindTaskDuration(array[i])} ms` );//+ JSON.stringify(array[i])
+        array[i].then((value) => {
+            console.log(`${Graph.FindTaskname(array[i])} is now finished for ${Graph.FindTaskDuration(array[i])} ms` );//+ JSON.stringify(array[i])
+            subArray = Graph.ShowSuccessors(array[i])
+            if (subArray.length != 0) {
+                console.log('Dependants tasks of ' + "\x1b[34m%s\x1b[0m",`${Graph.FindTaskname(array[i])} are now being launched in parallel.` )
+                for (let k = 0; k < subArray.length; k++) {
+                    //console.log('kid ' + k + '   ....   ' + Graph.FindTaskname(subArray[k]));
+                }
+                Executor(subArray);
+            } else {
+                let kids = Graph.NodeList.get(Graph.FindTaskId(array[i])).children.length;
+                if (kids > 0 ){
+                    //console.log('Dependants tasks of ' + "\x1b[34m%s\x1b[0m",`${Graph.FindTaskname(array[i])} are not yet releasable.` )
+                }
+                return;
+            }
+        })
+    }
+}
+
+//console.log("1");
+//Graph.printList();
+/////////////
+Executor(arr)
+/////////////
+//console.log("2");
+
+//Graph.printList();
+//console.log("3");
